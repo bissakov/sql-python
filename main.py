@@ -1,7 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Optional, List, Tuple
+import rich
 
 
 @dataclass
@@ -40,28 +41,14 @@ class Database:
         self.config = config
         self.engine = None
 
-    def _check_config(self):
-        errored_items = []
-        if self.config.credentials is None:
-            errored_items.append('credentials')
-        if self.config.host is None:
-            errored_items.append('host')
-        if self.config.port is None:
-            errored_items.append('port')
-        if errored_items:
-            error_msg = ', '.join(errored_items)
-            print(error_msg, errored_items)
-            raise WrongConfigError(error_msg=f'{error_msg.capitalize()} not provided.')
-
-
     def connect(self):
         if self.config.dbtype == 'sqlite':
             self.engine = create_engine('sqlite:///' + self.config.dbname)
         else:
-            try:
-                self._check_config()
-            except WrongConfigError as e:
-                raise e
+            if self.config.credentials is None or self.config.host is None or self.config.port is None:
+                error_msg = ', '.join(field.name for field in fields(self.config) if not getattr(self.config, field.name))
+                raise WrongConfigError(f'Config.{error_msg} not provided.')
+
             if self.config.dbtype == 'postgresql':
                 self.engine = create_engine(f'postgresql://{self.config.credentials.user}:{self.config.credentials.password}@' \
                                             f'{self.config.host}:{self.config.port}/{self.config.dbname}')
@@ -72,6 +59,7 @@ class Database:
     def execute(self, sql: str) -> QueryResult:
         if self.engine is None:
             raise ConnectionNotEstablishedError()
+
         with self.engine.connect() as conn:
             result = conn.execute(text(sql))
             columns = tuple(result.keys())
@@ -81,12 +69,14 @@ class Database:
     def commit(self):
         if self.engine is None:
             raise ConnectionNotEstablishedError()
+
         with self.engine.connect() as conn:
             conn.commit()
     
     def rollback(self):
         if self.engine is None:
             raise ConnectionNotEstablishedError()
+
         with self.engine.connect() as conn:
             conn.rollback()
 
