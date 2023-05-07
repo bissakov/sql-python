@@ -23,7 +23,6 @@ pynvim==0.4.3
 requests==2.30.0
 rich==13.3.5
 snowballstemmer==2.2.0
-Sphinx==7.0.0
 sphinxcontrib-applehelp==1.0.4
 sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==2.0.1
