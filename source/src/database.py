@@ -3,7 +3,7 @@ from typing import Dict, Optional
 
 import rich
 from sqlalchemy import exc as sqlalchemy_exc
-from sqlalchemy import create_engine, table
+from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
 import sqlite3
 from sqlalchemy.sql import text
@@ -31,6 +31,8 @@ class Database:
 
         Args:
             config (Config): The database configuration.
+        Raises:
+            WrongConfigError: If the database type in the configuration is not supported.
         """
         self.config: Config = config
         self.engine: Optional[Engine] = None
@@ -40,16 +42,13 @@ class Database:
             "mysql": "mysql+pymysql://{user}:{password}@{host}:{port}/{dbname}",
             "mssql": "mssql+pymssql://{user}:{password}@{host}:{port}/{dbname}",
         }
+        if self.config.dbtype not in self.DATABASE_ENGINES:
+            raise WrongConfigError(f"Unsupported dbtype: {self.config.dbtype}") from None
 
     def connect(self) -> None:
         """
         Establish a connection to the database.
-
-        Raises:
-            WrongConfigError: If the database type in the configuration is not supported.
         """
-        if self.config.dbtype not in self.DATABASE_ENGINES:
-            raise WrongConfigError(f"Unsupported dbtype: {self.config.dbtype}")
         engine_template = self.DATABASE_ENGINES[self.config.dbtype]
         connection_string = engine_template.format(
             user=self.config.credentials.user,
@@ -75,7 +74,7 @@ class Database:
             SQLAlchemyError: If any other error occurs during query execution.
         """
         if self.engine is None:
-            raise ConnectionNotEstablishedError()
+            raise ConnectionNotEstablishedError() from None
 
         try:
             with self.engine.connect() as conn:
@@ -86,12 +85,12 @@ class Database:
         except (sqlite3.OperationalError, sqlalchemy_exc.OperationalError) as e:
             error_msg = str(e).lower().strip()
             if 'syntax error' in error_msg:
-                raise SQLSyntaxError(str(e))
+                raise SQLSyntaxError(str(e)) from None
             elif 'no such table' in error_msg:
                 table_name = match.group(1) if (match := re.search(r'no such table: (.+)', error_msg)) else ''
-                raise NoSuchTableError(db_name=self.config.dbname, table_name=table_name)
-            # else:
-            #     raise e
+                raise NoSuchTableError(db_name=self.config.dbname, table_name=table_name) from None
+            else:
+                raise e
 
     def commit(self) -> None:
         """
@@ -101,7 +100,7 @@ class Database:
             ConnectionNotEstablishedError: If the database connection has not been established.
         """
         if self.engine is None:
-            raise ConnectionNotEstablishedError()
+            raise ConnectionNotEstablishedError() from None
 
         with self.engine.connect() as conn:
             conn.commit()
@@ -114,7 +113,7 @@ class Database:
             ConnectionNotEstablishedError: If the database connection has not been established.
         """
         if self.engine is None:
-            raise ConnectionNotEstablishedError()
+            raise ConnectionNotEstablishedError() from None
 
         with self.engine.connect() as conn:
             conn.rollback()
