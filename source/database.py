@@ -8,8 +8,14 @@ from sqlalchemy.engine.base import Engine
 import sqlite3
 from sqlalchemy.sql import text
 
-from errors import *
-from structs import *
+try:
+    from errors import (ConnectionNotEstablishedError, WrongConfigError,
+                        SQLSyntaxError, NoSuchTableError)
+    from structs import Config, QueryResult
+except ModuleNotFoundError:
+    from .errors import (ConnectionNotEstablishedError, WrongConfigError,
+                        SQLSyntaxError, NoSuchTableError)
+    from .structs import Config, QueryResult
 
 
 class Database:
