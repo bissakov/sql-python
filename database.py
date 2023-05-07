@@ -1,87 +1,15 @@
-from dataclasses import dataclass, fields
-from typing import Dict, List, Optional, Tuple
+import re
+from typing import Dict, Optional
 
 import rich
-from sqlalchemy import create_engine
+from sqlalchemy import exc as sqlalchemy_exc
+from sqlalchemy import create_engine, table
 from sqlalchemy.engine.base import Engine
+import sqlite3
 from sqlalchemy.sql import text
-from sqlalchemy.exc import SQLAlchemyError
 
-
-@dataclass
-class Credentials:
-    """
-    Data class representing database credentials.
-
-    Args:
-        user (Optional[str]): The username for the database. Default is None.
-        password (Optional[str]): The password for the database. Default is None.
-    """
-    user: Optional[str] = None
-    password: Optional[str] = None
-
-
-@dataclass
-class Config:
-    """
-    Data class representing the database configuration.
-
-    Args:
-        dbtype (str): The type of the database (e.g., 'sqlite', 'postgresql', 'mysql').
-        dbname (str): The name of the database.
-        credentials (Credentials): The credentials for the database. Default is an instance of Credentials with default values.
-        host (Optional[str]): The host address of the database. Default is None.
-        port (Optional[int]): The port number of the database. Default is None.
-    """
-    dbtype: str
-    dbname: str
-    credentials: Credentials = Credentials()
-    host: Optional[str] = None
-    port: Optional[int] = None
-
-
-@dataclass
-class QueryResult:
-    """
-    Data class representing the result of a database query.
-
-    Args:
-        rows (List[Tuple]): The rows returned by the query.
-        columns (Tuple): The column names of the result set.
-    """
-    rows: List[Tuple]
-    columns: Tuple
-
-
-class ConnectionNotEstablishedError(Exception):
-    """
-    Exception raised when a database connection has not been established.
-
-    Inherits:
-        Exception
-    """
-    def __init__(self) -> None:
-        super().__init__("Connection not established. Call the connect method first.")
-
-
-class WrongConfigError(Exception):
-    """
-    Exception raised when the database configuration is invalid or missing.
-
-    Inherits:
-        Exception
-    """
-    pass
-
-
-class SQLSyntaxError(Exception):
-    """Exception raised for SQL syntax errors.
-
-    Attributes:
-        error_msg -- explanation of the error
-    """
-    def __init__(self, error_msg: str) -> None:
-        super().__init__(error_msg)
+from errors import *
+from structs import *
 
 
 class Database:
@@ -132,7 +60,7 @@ class Database:
         )
         self.engine = create_engine(connection_string)
 
-    def execute(self, sql: str) -> QueryResult:
+    def execute(self, sql: str) -> Optional[QueryResult]:
         """Executes the provided SQL query and returns the result.
 
         Args:
@@ -155,11 +83,15 @@ class Database:
                 columns = tuple(result.keys())
                 rows = [tuple(row) for row in result.fetchall()]
             return QueryResult(rows, columns)
-        except SQLAlchemyError as e:
-            if 'syntax error' in str(e).lower():
+        except (sqlite3.OperationalError, sqlalchemy_exc.OperationalError) as e:
+            error_msg = str(e).lower().strip()
+            if 'syntax error' in error_msg:
                 raise SQLSyntaxError(str(e))
-            else:
-                raise e
+            elif 'no such table' in error_msg:
+                table_name = match.group(1) if (match := re.search(r'no such table: (.+)', error_msg)) else ''
+                raise NoSuchTableError(db_name=self.config.dbname, table_name=table_name)
+            # else:
+            #     raise e
 
     def commit(self) -> None:
         """
@@ -193,12 +125,15 @@ if __name__ == "__main__":
     db = Database(config)
     db.connect()
     # data = db.execute('SELECT * FROM customers;')
-    data = db.execute('salkdasjlkda')
-    import rich
-
-    rich.print(data.columns)
-    for row in data.rows:
-        print(row)
+    try:
+        data = db.execute('select * from sadasda;')
+    except NoSuchTableError as e:
+        raise e
+    # import rich
+    #
+    # rich.print(data.columns)
+    # for row in data.rows:
+    #     print(row)
     # rich.print(data)
 
     # config = Config(dbtype="sqlite", dbname="chinook.db")
