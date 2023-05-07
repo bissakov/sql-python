@@ -1,20 +1,20 @@
 import re
+import sqlite3
 from typing import Dict, Optional
 
 import rich
-from sqlalchemy import exc as sqlalchemy_exc
 from sqlalchemy import create_engine
+from sqlalchemy import exc as sqlalchemy_exc
 from sqlalchemy.engine.base import Engine
-import sqlite3
 from sqlalchemy.sql import text
 
 try:
-    from errors import (ConnectionNotEstablishedError, WrongConfigError,
-                        SQLSyntaxError, NoSuchTableError)
+    from errors import (ConnectionNotEstablishedError, NoSuchTableError,
+                        SQLSyntaxError, WrongConfigError)
     from structs import Config, QueryResult
 except ModuleNotFoundError:
-    from .errors import (ConnectionNotEstablishedError, WrongConfigError,
-                        SQLSyntaxError, NoSuchTableError)
+    from .errors import (ConnectionNotEstablishedError, NoSuchTableError,
+                         SQLSyntaxError, WrongConfigError)
     from .structs import Config, QueryResult
 
 

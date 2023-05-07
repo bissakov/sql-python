@@ -2,12 +2,12 @@ import unittest
 
 try:
     from database import Database
-    from errors import (ConnectionNotEstablishedError, SQLSyntaxError)
+    from errors import ConnectionNotEstablishedError, SQLSyntaxError
     from structs import Config, QueryResult
 except ModuleNotFoundError:
-    from .errors import (ConnectionNotEstablishedError, SQLSyntaxError)
-    from .structs import Config, QueryResult
     from .database import Database
+    from .errors import ConnectionNotEstablishedError, SQLSyntaxError
+    from .structs import Config, QueryResult
 
 
 class DatabaseTestCase(unittest.TestCase):
