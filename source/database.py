@@ -10,11 +10,11 @@ from sqlalchemy.sql import text
 
 try:
     from errors import (ConnectionNotEstablishedError, NoSuchTableError,
-                        SQLSyntaxError)
+                        SQLSyntaxError, WrongPasswordError)
     from structs import Config, Credentials, QueryResult
 except ModuleNotFoundError:
     from .errors import (ConnectionNotEstablishedError, NoSuchTableError,
-                         SQLSyntaxError)
+                         SQLSyntaxError, WrongPasswordError)
     from .structs import Config, Credentials, QueryResult
 
 
@@ -37,8 +37,6 @@ class Database:
 
         Args:
             config (Config): The database configuration.
-        Raises:
-            WrongConfigError: If the database type in the configuration is not supported.
         """
         self.config: Config = config
         self.engine: Optional[Engine] = None
@@ -62,6 +60,13 @@ class Database:
             dbname=self.config.dbname,
         )
         self.engine = create_engine(connection_string)
+        try:
+            with self.engine.connect() as _:
+                pass
+        except sqlalchemy_exc.OperationalError as e:
+            error_msg = str(e).lower().strip()
+            if 'password authentication failed' in error_msg:
+                raise WrongPasswordError(username=self.config.credentials.user) from None
 
     def execute(self, sql: str) -> Optional[QueryResult]:
         """Executes the provided SQL query and returns the result.
@@ -123,23 +128,36 @@ class Database:
             conn.rollback()
 
 
-if __name__ == "__main__":
-    config = Config(dbtype='sqlite', dbname='chinook.db')
-    db = Database(config)
-    db.connect()
-    # data = db.execute('SELECT * FROM customers;')
-    try:
-        data = db.execute('select * from sadasda;')
-    except NoSuchTableError as e:
-        raise e
-    # import rich
-    #
-    # rich.print(data.columns)
-    # for row in data.rows:
-    #     print(row)
-    # rich.print(data)
+if __name__ == '__main__':
+    import os
 
-    # config = Config(dbtype="sqlite", dbname="chinook.db")
-    # db = Database(config)
+    # config = Config(
+    #     dbtype='postgresql',
+    #     dbname='dvdrental',
+    #     credentials=Credentials(user='postgres', password='6355'),
+    #     # host='127.0.0.1',
+    #     # host='8.8.8.8',
+    #     host='192.168.100.14',
+    #     port=5432
+    # )
+    # config = Config(
+    #     dbtype='mysql',
+    #     dbname='sakila',
+    #     credentials=Credentials(user='test', password='pass'),
+    #     host='192.168.100.14',
+    #     # host=os.environ['WSL_HOST_IP'],
+    #     port=3306
+    # )
+    # db = Database(config=config)
     # db.connect()
-    # db.execute('')
+    # res = db.execute('SELECT first_name, last_name FROM customer;')
+    # rich.print(res)
+
+    config = Config(
+        dbtype='sqlite',
+        dbname='unknown_db'
+    )
+    
+    db = Database(config=config)
+    db.connect()
+    db.execute('SELECT * from customer;') 
