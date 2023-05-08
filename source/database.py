@@ -10,12 +10,12 @@ from sqlalchemy.sql import text
 
 try:
     from errors import (ConnectionNotEstablishedError, NoSuchTableError,
-                        SQLSyntaxError, WrongConfigError)
-    from structs import Config, QueryResult
+                        SQLSyntaxError)
+    from structs import Config, Credentials, QueryResult
 except ModuleNotFoundError:
     from .errors import (ConnectionNotEstablishedError, NoSuchTableError,
-                         SQLSyntaxError, WrongConfigError)
-    from .structs import Config, QueryResult
+                         SQLSyntaxError)
+    from .structs import Config, Credentials, QueryResult
 
 
 class Database:
@@ -43,13 +43,11 @@ class Database:
         self.config: Config = config
         self.engine: Optional[Engine] = None
         self.DATABASE_ENGINES: Dict[str, str] = {
-            "sqlite": "sqlite:///{dbname}",
-            "postgresql": "postgresql://{user}:{password}@{host}:{port}/{dbname}",
-            "mysql": "mysql+pymysql://{user}:{password}@{host}:{port}/{dbname}",
-            "mssql": "mssql+pymssql://{user}:{password}@{host}:{port}/{dbname}",
+            'sqlite': 'sqlite:///{dbname}',
+            'postgresql': 'postgresql://{user}:{password}@{host}:{port}/{dbname}',
+            'mysql': 'mysql+pymysql://{user}:{password}@{host}:{port}/{dbname}',
+            'mssql': 'mssql+pymssql://{user}:{password}@{host}:{port}/{dbname}',
         }
-        if self.config.dbtype not in self.DATABASE_ENGINES:
-            raise WrongConfigError(f"Unsupported dbtype: {self.config.dbtype}") from None
 
     def connect(self) -> None:
         """
