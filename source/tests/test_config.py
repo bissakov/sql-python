@@ -1,5 +1,5 @@
-from source.structs import Config
 from source.errors import WrongConfigError
+from source.structs import Config
 
 
 def test_invalid_database_type() -> None:

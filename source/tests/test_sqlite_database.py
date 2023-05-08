@@ -1,10 +1,12 @@
-from source.database import Database
-from source.structs import Config
-from source.errors import ConnectionNotEstablishedError, NoSuchTableError, SQLSyntaxError
 from sqlalchemy.engine.base import Engine
 
+from source.database import Database
+from source.errors import (ConnectionNotEstablishedError, NoSuchTableError,
+                           SQLSyntaxError)
+from source.structs import Config
 
-def test_sqlite_connectivity() -> None:
+
+def test_sqlite_valid_connectivity() -> None:
     """
     Test function for checking the connectivity to an SQLite database.
 
@@ -103,5 +105,4 @@ def test_sqlite_wrong_syntax_query() -> None:
         error = e
 
     assert isinstance(error, SQLSyntaxError)
-
 
