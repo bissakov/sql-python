@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
+from typing_utils import issubtype
 
 try:
     from errors import WrongConfigError
@@ -27,7 +28,7 @@ class Credentials:
         Raises:
             WrongConfigError: If user or password is not of type Optional[str].
         """
-        if not isinstance(self.user, Optional[str]) or not isinstance(self.password, Optional[str]):
+        if not issubtype(type(self.user), Optional[str]) or not issubtype(type(self.password), Optional[str]):
             raise WrongConfigError(f'User and password should be strings.')
 
 
