@@ -96,7 +96,8 @@ class Database:
             if 'syntax error' in error_msg:
                 raise SQLSyntaxError(str(e)) from None
             elif 'no such table' in error_msg:
-                table_name = match.group(1) if (match := re.search(r'no such table: (.+)', error_msg)) else ''
+                match = re.search(r'no such table: (.+)', error_msg)
+                table_name = match.group(1) if match else ''
                 raise NoSuchTableError(db_name=self.config.dbname, table_name=table_name) from None
             else:
                 raise e
@@ -144,8 +145,7 @@ if __name__ == '__main__':
     #     dbtype='mysql',
     #     dbname='sakila',
     #     credentials=Credentials(user='test', password='pass'),
-    #     host='192.168.100.14',
-    #     # host=os.environ['WSL_HOST_IP'],
+    #     host=os.environ['WSL_HOST_IP'],
     #     port=3306
     # )
     # db = Database(config=config)
