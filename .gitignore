@@ -1,4 +1,5 @@
 *.db
+venv-3.7/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
